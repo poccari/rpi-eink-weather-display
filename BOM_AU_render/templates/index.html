@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <div class="dashboard">
+
+        <!-- Top bar -->
+        <div class="top-bar">
+            <div class="sync-time">Last Sync: {{ last_sync }}</div>
+            <div class="battery">Battery: {{ battery_status }}</div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main">
+            <!-- Current weather (left column) -->
+            <div class="current-weather">
+                <div class="temp">{{ current_data.temp }}°C</div>
+                <div class="feels like">{{ current_data.temp_feels_like }}°C</div>
+            </div>
+
+            <!-- Forecast rows -->
+            <div class="forecast">
+                <!-- Hourly forecast -->
+                <div class="forecast-row hourly">
+                    {% for hour in hourly_forecast %}
+                    <div class="tile">
+                        <div class="hour">{{ hour.time }}</div>
+                        <div class="icon {{ hour.icon }}"></div>
+                        <div class="temp">{{ hour.temp }}°C</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Daily forecast -->
+                <div class="forecast-row daily">
+                    {% for day in daily_forecast %}
+                    <div class="tile">
+                        <div class="day">{{ day.day }}</div>
+                        <div class="icon {{ day.mdi_icon }}"></div>
+                        <div class="temp">{{ day.temp_max }}°C</div>
+                        <div class="description">{{ day.short_text }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+            <div class="warning">
+                {% for warning in weather_warnings %}
+                <div class="warning-item">{{ warning }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
