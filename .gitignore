@@ -8,6 +8,8 @@ gcloud-key.json
 render/src/templates/render.html
 render/src/templates/random.html
 
+.vscode/
+
 .DS_Store
 # exclude everything
 output/*
