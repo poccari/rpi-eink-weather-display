@@ -1,6 +1,9 @@
 """BOM data 'collector' that downloads the observation data."""
 import logging
 import requests
+import datetime
+import json
+import os
 
 #taken from https://github.com/bremor/bureau_of_meteorology
 #and modified to work as general library (not async) and removed home assistant references
@@ -98,7 +101,7 @@ _LOGGER = logging.getLogger(__name__)
 class Collector:
     """Collector for PyBoM."""
 
-    def __init__(self, latitude, longitude):
+    def __init__(self, latitude, longitude,test=False,test_json=None):
         """Init collector."""
         self.locations_data = None
         self.observations_data = None
@@ -107,11 +110,13 @@ class Collector:
         self.warnings_data = None
         self.geohash7 = geohash_encode(latitude, longitude)
         self.geohash6 = self.geohash7[:6]
+        self.test = test
+        self.test_json = test_json
 
     def get_locations_data(self):
         headers={"User-Agent": "MakeThisAPIOpenSource/1.0.0"}
         """Get JSON location name from BOM API endpoint."""
-        
+
         response = requests.get(URL_BASE + self.geohash7)
 
         if response is not None and response.status == 200:
@@ -125,7 +130,7 @@ class Collector:
             d = self.daily_forecasts_data["data"][day]
 
             d["mdi_icon"] = MAP_MDI_ICON[d["icon_descriptor"]]
-
+            d["day"] = datetime.datetime.strptime(d["date"],"%Y-%m-%dT%H:%M:%SZ").strftime("%A")
             flatten_dict(["amount"], d["rain"])
             flatten_dict(["rain", "uv", "astronomical"], d)
 
@@ -160,7 +165,11 @@ class Collector:
 
 
     def async_update(self):
-        """Refresh the data on the collector object."""
+        """Refresh the data on the collector object.
+        if the object is initialised with test=True, it will populate from the test_json file"""
+        if self.test:
+            self.populate_test_data()
+            return
         headers={"User-Agent": "MakeThisAPIOpenSource/1.0.0"}
         response = requests.get(URL_BASE + self.geohash7, headers=headers)
         if response is not None and response.status_code == 200:
@@ -196,4 +205,15 @@ class Collector:
         resp = requests.get(URL_BASE + self.geohash6 + URL_WARNINGS, headers=headers)
         if resp is not None and resp.status_code == 200:
             self.warnings_data = resp.json()
-            
+
+    def populate_test_data(self):
+        """Populate test data."""
+        print("Populating test data from JSON file")
+        if self.test_json is not None:
+            with open(self.test_json, 'r') as json_file:
+                data = json.load(json_file)
+                self.observations_data = {'data':data['observations_data']}
+                self.hourly_forecasts_data = {'data':data['hourly_forecasts_data']}
+                self.daily_forecasts_data = {'data':data['daily_forecasts_data']}
+                self.warnings_data ={'data': data['warnings_data']}
+                self.locations_data = {'data':data['locations_data']}
